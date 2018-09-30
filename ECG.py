@@ -67,7 +67,6 @@ class ECG:
         self.apply_fft()
         self.plot_fft()
 
-
     def get_frequency_value(self):
         N = int(len(self.data))  # nombre d'element dans la liste
         T = (1 / self.sample)  # periode d'échantillonage du signal
@@ -75,8 +74,7 @@ class ECG:
         xf = np.linspace(0, 1 / (2 * T), N / 2)
         threshold = 0.2 * max(abs(self.data))
         mask = abs(self.data) > threshold
-        i=0
-        for i in range(int(len(mask)/2)) :
+        for i in range(int(len(mask)/2)):
             if mask[i]:
                 freq.append(xf[i])
         return freq
