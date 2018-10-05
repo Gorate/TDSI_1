@@ -3,10 +3,12 @@ import numpy as np
 from scipy.fftpack import fft
 from scipy import signal
 from CPR import CPR
+#from Utilitaires import *
+
 
 class ECG:
 
-    def __init__(self, name : str, data :list, sample ):
+    def __init__(self, name, data, sample):
         self.name = name
         self.data = data
         self.sample = sample
@@ -14,8 +16,8 @@ class ECG:
     def add_data(self, data_ecg):
         self.data.append(data_ecg)
 
-    def write_data(self, data : list):
-        self.data = data
+    def write_data(self, data):
+        self.data = [data]
 
     def write_name(self, name):
         self.name = name
@@ -25,7 +27,7 @@ class ECG:
 
     def plot(self):
         N = int(len(self.data))  # nombre d'element dans la liste
-        T = (1/self.sample)  # periode d'échantillonage du signal
+        T = (1 / self.sample)  # periode d'échantillonage du signal
         x = np.linspace(0.0, N * T, N)
         plt.ylabel('mV')
         plt.xlabel('Time [s]')
@@ -35,7 +37,7 @@ class ECG:
 
     def apply_filter(self, fl, fh, order):
 
-        T = ( 1/self.sample)
+        T = (1 / self.sample)
         w1 = fl / (1 / (T * 2))  # Normalize the frequency
         w2 = fh / (1 / (T * 2))
         b, a = signal.butter(order, [w1, w2], 'band')
@@ -46,7 +48,7 @@ class ECG:
 
     def plot_fft(self):
         N = int(len(self.data))  # nombre d'element dans la liste
-        T = (1/self.sample)  # periode d'échantillonage du signal
+        T = (1 / self.sample)  # periode d'échantillonage du signal
         xf = np.linspace(0, 1 / (2 * T), N / 2)
         plt.plot((xf[1:]), 2.0 / N * np.abs(self.data[int(0):int(N / 2)][1:]))
         plt.ylabel('Amplitude')
@@ -57,7 +59,7 @@ class ECG:
     def plot_data_and_fft(self):
         plt.subplot(2, 1, 1)
         N = int(len(self.data))  # nombre d'element dans la liste
-        T = (1/self.sample)  # periode d'échantillonage du signal
+        T = (1 / self.sample)  # periode d'échantillonage du signal
         x = np.linspace(0.0, N * T, N)
         plt.ylabel('mV')
         plt.xlabel('Time [s]')
@@ -69,37 +71,39 @@ class ECG:
 
     def get_frequency_value(self):
         N = int(len(self.data))  # nombre d'element dans la liste
-        T = ( 1/self.sample)  # periode d'échantillonage du signal
+        T = (1 / self.sample)  # periode d'échantillonage du signal
         freq = []
         xf = np.linspace(0, 1 / (2 * T), N / 2)
-        threshold = 0.5 * max(abs(self.data))
+        threshold = 0.2 * max(abs(self.data))
         mask = abs(self.data) > threshold
         for i in range(int(len(mask)/2)):
             if mask[i]:
                 freq.append(xf[i])
         return freq
 
-    def plot_data_and_cpr(self, cpr : CPR ):
-        N = int(len(self.data))  # nombre d'element dans la liste
-        T = (1/self.sample)  # periode d'échantillonage du signalç
-        data_plot = []
+    def plot_data_and_cpr(self):
 
-        x = np.linspace(0.0, N * T, N)
-        plt.ylabel('mV')
-        plt.xlabel('Time [s]')
-        plt.grid()
-        plt.plot(x, self.data,color='b',)
-        print(cpr.start_time)
-        print(cpr.stop_time)
-        plt.bar(cpr.start_time,1.25*max(self.data),width=5,color='r')
-        plt.bar(cpr.stop_time, 1.25*max(self.data),width=5, color='g')
-        plt.show()
+        #listCPR = load_cpr_data()
+        #if self.name.index('.')
 
-    def filtre_peigne(self, x : int, K : int):
-        if len(self.data) > K:
-            for i in range(K, len(self.data)):
-                self.data[i] = self.data[i] + self.data[i-K] * x
-        return
+
+        #cpr = listCPR[]
+
+        #N = int(len(self.data))  # nombre d'element dans la liste
+        #T = (1 / self.sample)  # periode d'échantillonage du signalç
+        #data_plot = []
+#
+        #x = np.linspace(0.0, N * T, N)
+        #plt.ylabel('mV')
+        #plt.xlabel('Time [s]')
+        #plt.grid()
+        #plt.plot(x, self.data, color='b', )
+        #print(cpr.start_time)
+        #print(cpr.stop_time)
+        #plt.bar(cpr.start_time, 1.25 * max(self.data), width=5, color='r')
+        #plt.bar(cpr.stop_time, 1.25 * max(self.data), width=5, color='g')
+        #plt.show()
+        return 0
 
 
 
