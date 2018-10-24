@@ -5,9 +5,29 @@ from ECG import ECG
 class Individu:
 
     def __init__(self):
-        self.numIndividu = self.selectIndividu()
+        # self.numIndividu = self.selectIndividu()
+        # self.ecgs_individu = self.load_ecgs_individu(self.numIndividu)
+        # self.results_shocks = self.load_result_expe(self.numIndividu)
+
+        self.numIndividu = 0
+        self.ecgs_individu = []
+        self.results_shocks = []
+
+    def resetindividu(self):
+        self.numIndividu = 0
+        self.ecgs_individu = []
+        self.results_shocks = []
+
+    def initIndividu(self, numIndividu:int):
+        self.numIndividu = numIndividu
         self.ecgs_individu = self.load_ecgs_individu(self.numIndividu)
         self.results_shocks = self.load_result_expe(self.numIndividu)
+
+    def getNumIndividuStr(self):
+        return str(self.numIndividu)
+
+    def getNbrEcgs(self):
+        return len(self.ecgs_individu)
 
     def selectIndividu(self):
         return int(input("\nChoisir le numéro d'individu : (1 à 17 sauf 2)\n"))
@@ -68,11 +88,15 @@ class Individu:
         return data
 
 
-    def plot_ecg(self, numEcg:int):
-        mode = self.select_plot_mode()
+    def plot_ecg(self, numEcg:int, mode:int):
+        #mode = self.select_plot_mode()
 
         if mode == 1:
-            self.ecgs_individu[(numEcg-1)].plot(str(self.numIndividu), str(numEcg), str(self.results_shocks[numEcg-1]))
+            self.ecgs_individu[(numEcg-1)].plot(str(self.numIndividu), str(numEcg),
+                                                str(self.results_shocks[numEcg-1]))
         elif mode == 2:
-            self.ecgs_individu[(numEcg-1)].plot_data_and_fft(str(self.numIndividu), str(numEcg), str(self.results_shocks[numEcg-1]))
-
+            self.ecgs_individu[(numEcg-1)].plot_fft(str(self.numIndividu), str(numEcg),
+                                                    str(self.results_shocks[numEcg-1]))
+        elif mode == 3:
+            self.ecgs_individu[(numEcg - 1)].plot_data_and_fft(str(self.numIndividu), str(numEcg),
+                                                               str(self.results_shocks[numEcg - 1]))

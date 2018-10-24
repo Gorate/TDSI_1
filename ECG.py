@@ -44,6 +44,7 @@ class ECG:
         self.data = fft(self.data)
 
     def plot_fft(self, individu="x", numECG="*", resultat="none"):
+        self.apply_fft()
         N = int(len(self.data))  # nombre d'element dans la liste
         T = (1 / self.sample)  # periode d'échantillonage du signal
         xf = np.linspace(0, 1 / (2 * T), N / 2)
