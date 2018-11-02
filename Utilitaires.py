@@ -7,13 +7,14 @@ from CPR import CPR
 #      Utilitaires pour étude de la base 2       #
 ##################################################
 
-
+## car ca me gave d'appuyer sur mes touches
 def select_animal():
-    return int(input("\nChoisir le numéro d'animal : (1 à 17 sauf 2)\n"))
-
+   # return int(input("\nChoisir le numéro d'animal : (1 à 17 sauf 2)\n"))
+    return 1
 
 def select_ecg():
-    return int(input("\nChoisir le numéro d'ECG : \n"))
+  #  return int(input("\nChoisir le numéro d'ECG : \n"))
+    return 1
 
 
 def load_animal_datas(): #Recuperation des ECG d'un animal
@@ -58,17 +59,30 @@ def load_animal_datas(): #Recuperation des ECG d'un animal
 def afficher_un_ECG(listeECG : list):
 
     numEcg = select_ecg()
-
+    listeECG[numEcg - 1].find_rescue(1,numEcg)
+    listeECG[numEcg-1].find_shock()
+    listeECG[numEcg - 1].delete_after_shock()
+    listeECG[numEcg - 1].apply_filter(0.5,15,3)
     listeECG[(numEcg-1)].plot_data_and_fft()
-
+    #listeECG[(numEcg - 1)].plot_shock()
 
 def afficher_all_ECG(listeECG : list):
 
     for i in range(len(listeECG)):
-        listeECG[i].plot_data_and_fft()
+        listeECG[i].plot_data_and_EMA(10)
 
 
+def create_train(listeEcg: list):
+    train = []
+    for i in range (round(len(listeEcg) / 3)):
+        train.append(listeEcg[i])
+    return train
 
+def create_test(listeEcg:list):
+    test = []
+    for i in range(round(len(listeEcg) / 3),round(len(listeEcg) *2 / 3)):
+        test.append(listeEcg[i])
+    return test
 ##################################################
 # A garder mais pas util pour étude de la base 2 #
 ##################################################
