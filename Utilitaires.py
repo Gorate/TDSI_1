@@ -56,13 +56,14 @@ def load_animal_datas(): #Recuperation des ECG d'un animal
     return listECG
 
 
-def afficher_un_ECG(listeECG : list):
+def afficher_un_ECG(listeECG : list, nbEchAvShock:int):
 
     numEcg = select_ecg()
     listeECG[numEcg - 1].find_rescue(1,numEcg)
     listeECG[numEcg-1].find_shock()
     listeECG[numEcg - 1].delete_after_shock()
-    listeECG[numEcg - 1].apply_filter(0.5,15,3)
+    listeECG[numEcg - 1].delete_before_shock(nbEchAvShock)
+    #listeECG[numEcg - 1].apply_filter(0.5,15,3)
     listeECG[(numEcg-1)].plot_data_and_fft()
     #listeECG[(numEcg - 1)].plot_shock()
 

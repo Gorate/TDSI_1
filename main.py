@@ -14,6 +14,6 @@ from Utilitaires import *
 listeECG = load_animal_datas()
 test = create_test(listeECG)
 train = create_train(listeECG)
-afficher_un_ECG(listeECG)
+afficher_un_ECG(listeECG, 600)
 
 

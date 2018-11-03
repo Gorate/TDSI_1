@@ -14,42 +14,10 @@ class ECG:
         self.rescue = 1
         self.shock = 0
 
-    def set_rescue(self,rescue):
-        self.rescue = rescue
 
-    def find_shock(self):
-        for i in range (len(self.data)):
-            if self.data[i] > abs(0.5*max(self.data)):
-                self.shock = i
-                return
-
-    def find_rescue(self,numAnimal : int,num_ecg : int):
-        file_to_open = []
-        data=[]
-        os.chdir(os.getcwd())
-        file_name = "Rescue"+(str(numAnimal)+".txt")
-        file = open(file_name,"r")
-        read = file.read()
-        self.rescue = read[(num_ecg-1)*2]
-
-    def delete_after_shock(self):
-        data = []
-        for i in range (self.shock+5):
-            data.append(self.data[i])
-        self.data = data
-        return
-
-    def plot_shock(self):
-        N = int(len(self.data))  # nombre d'element dans la liste
-        T = (1/self.sample)  # periode d'échantillonage du signal
-        x = np.linspace(0.0, N * T, N)
-        plt.ylabel('mV')
-        plt.xlabel('Time [s]')
-        plt.grid()
-        plt.plot(x, self.data,color='r')
-        plt.bar(x[self.shock], 1.25 * max(self.data), width=0.1, color='b')
-        print(self.shock)
-        plt.show()
+    #
+    #   Accesseurs
+    #
 
     def add_data(self, data_ecg):
         self.data.append(data_ecg)
@@ -63,6 +31,46 @@ class ECG:
     def write_sample(self, sample):
         self.sample = sample
 
+
+    #
+    #   Détection du shock dans l'ECG
+    #
+
+    def find_shock(self):
+        for i in range(len(self.data)):
+            if abs(self.data[i]) > abs(0.5*max(self.data)):
+                self.shock = i
+                return
+
+
+    #
+    #   Standardisation de l'ECG
+    #
+
+    def delete_after_shock(self):
+        data = []
+        #for i in range (self.shock+5):
+        for i in range(self.shock):
+
+            data.append(self.data[i])
+        self.data = data
+        return
+
+    def delete_before_shock(self, nbEchToSaveBeforeShock:int ):
+        data = []
+        for i in range (len(self.data)):
+            if  i >= len(self.data)-nbEchToSaveBeforeShock:
+                data.append(self.data[i])
+            #else:
+            #   data.append(0)
+        self.data = data
+        return
+
+
+    #
+    #   Affichages
+    #
+
     def plot(self):
         N = int(len(self.data))  # nombre d'element dans la liste
         T = (1/self.sample)  # periode d'échantillonage du signal
@@ -72,17 +80,6 @@ class ECG:
         plt.grid()
         plt.plot(x, self.data,color='r',)
         plt.show()
-
-    def apply_filter(self, fl, fh, order):
-
-        T = ( 1/self.sample)
-        w1 = fl / (1 / (T * 2))  # Normalize the frequency
-        w2 = fh / (1 / (T * 2))
-        b, a = signal.butter(order, [w1], 'highpass')
-        self.data = signal.filtfilt(b, a, self.data)
-
-    def apply_fft(self):
-        self.data = fft(self.data)
 
     def plot_fft(self):
         N = int(len(self.data))  # nombre d'element dans la liste
@@ -107,18 +104,6 @@ class ECG:
         self.apply_fft()
         self.plot_fft()
 
-    def get_frequency_value(self):
-        N = int(len(self.data))  # nombre d'element dans la liste
-        T = ( 1/self.sample)  # periode d'échantillonage du signal
-        freq = []
-        xf = np.linspace(0, 1 / (2 * T), N / 2)
-        threshold = 0.5 * max(abs(self.data))
-        mask = abs(self.data) > threshold
-        for i in range(int(len(mask)/2)):
-            if mask[i]:
-                freq.append(xf[i])
-        return freq
-
     def plot_data_and_cpr(self, cpr : CPR ):
         N = int(len(self.data))  # nombre d'element dans la liste
         T = (1/self.sample)  # periode d'échantillonage du signalç
@@ -134,6 +119,61 @@ class ECG:
         plt.bar(cpr.start_time,1.25*max(self.data),width=5,color='r')
         plt.bar(cpr.stop_time, 1.25*max(self.data),width=5, color='g')
         plt.show()
+
+    def plot_data_and_EMA(self,period : int):
+        EMA = self.get_EMA(period)
+
+        N = int(len(self.data))  # nombre d'element dans la liste
+        T = (1/self.sample)  # periode d'échantillonage du signalç
+        x = np.linspace(0.0, N * T, N)
+        plt.ylabel('mV')
+        plt.xlabel('Time [s]')
+        plt.grid()
+        plt.plot(x, self.data,color='b')
+        x = np.linspace(0.0, N*T, len(EMA))
+        plt.plot(x, EMA, color='r')
+        plt.plot(x,self.get_sma(period),color='g')
+        plt.show()
+
+    def plot_shock(self):
+        N = int(len(self.data))  # nombre d'element dans la liste
+        T = (1 / self.sample)  # periode d'échantillonage du signal
+        x = np.linspace(0.0, N * T, N)
+        plt.ylabel('mV')
+        plt.xlabel('Time [s]')
+        plt.grid()
+        plt.plot(x, self.data, color='r')
+        plt.bar(x[self.shock], 1.25 * max(self.data), width=0.1, color='b')
+        print(self.shock)
+        plt.show()
+
+
+    #
+    #   Traitements ECG
+    #
+
+    def apply_filter(self, fl, fh, order):
+
+        T = (1 / self.sample)
+        w1 = fl / (1 / (T * 2))  # Normalize the frequency
+        w2 = fh / (1 / (T * 2))
+        b, a = signal.butter(order, [w1], 'highpass')
+        self.data = signal.filtfilt(b, a, self.data)
+
+    def apply_fft(self):
+        self.data = fft(self.data)
+
+    def get_frequency_value(self):
+        N = int(len(self.data))  # nombre d'element dans la liste
+        T = ( 1/self.sample)  # periode d'échantillonage du signal
+        freq = []
+        xf = np.linspace(0, 1 / (2 * T), N / 2)
+        threshold = 0.5 * max(abs(self.data))
+        mask = abs(self.data) > threshold
+        for i in range(int(len(mask)/2)):
+            if mask[i]:
+                freq.append(xf[i])
+        return freq
 
     def filtre_peigne(self, x : int, K : int):
         if len(self.data) > K:
@@ -170,20 +210,31 @@ class ECG:
                 EMA.append( abs(self.data[i*period]) - EMA[i-1] *multiplier + EMA[i-1] )
         return EMA
 
-    def plot_data_and_EMA(self,period : int):
-        EMA = self.get_EMA(period)
 
-        N = int(len(self.data))  # nombre d'element dans la liste
-        T = (1/self.sample)  # periode d'échantillonage du signalç
-        x = np.linspace(0.0, N * T, N)
-        plt.ylabel('mV')
-        plt.xlabel('Time [s]')
-        plt.grid()
-        plt.plot(x, self.data,color='b')
-        x = np.linspace(0.0, N*T, len(EMA))
-        plt.plot(x, EMA, color='r')
-        plt.plot(x,self.get_sma(period),color='g')
-        plt.show()
+
+
+
+
+
+
+    def set_rescue(self, rescue):
+        self.rescue = rescue
+
+    def find_rescue(self,numAnimal : int,num_ecg : int):
+        file_to_open = []
+        data=[]
+        os.chdir(os.getcwd())
+        file_name = "Rescue"+(str(numAnimal)+".txt")
+        file = open(file_name,"r")
+        read = file.read()
+        self.rescue = read[(num_ecg-1)*2]
+
+
+
+
+
+
+
 
 
 
