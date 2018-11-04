@@ -2,6 +2,7 @@ import os
 import csv
 from ECG import ECG
 from CPR import CPR
+import numpy as np
 
 ##################################################
 #      Utilitaires pour étude de la base 2       #
@@ -20,8 +21,8 @@ def select_ecg():
 def load_animal_datas(): #Recuperation des ECG d'un animal
 
     listECG = []
-
-    numAnimal = select_animal()
+    nbEchAvShock = 600
+    #numAnimal = select_animal()
 
     # Variables utiles pour récupération correct des données (résultant de leur acquisition)
     gain = 41
@@ -32,38 +33,66 @@ def load_animal_datas(): #Recuperation des ECG d'un animal
     file_to_open = []
     indexData = 1
     lastDirectoy = os.getcwd()
-    os.chdir(os.getcwd() + "\\DataSources\\Base2\\Animal_" + str(numAnimal) + "\\")
-    while os.path.isfile("A" + str(numAnimal) + "_Data" + str(indexData) + ".csv"):
-        file_to_open.append(os.getcwd() + "\\A" + str(numAnimal) + "_Data" + str(indexData) + ".csv")
-        indexData += 1
+    for num in range(0,2):
+        indexData =1
+        numAnimal = 1
+        if num == 0 :
+            numAnimal = 1
+        elif num == 1 :
+            numAnimal = 3
+        elif num == 2 :
+            numAnimal = 7
+        elif num == 3 :
+            numAnimal = 7
+        elif num == 4 :
+            numAnimal = 10
+        elif num == 5 :
+            numAnimal = 12
+        elif num == 6 :
+            numAnimal = 14
 
+        os.chdir(lastDirectoy)
+        os.chdir(os.getcwd() + "\\DataSources\\Base2\\Animal_" + str(numAnimal) + "\\")
+        print(os.getcwd())
+        while os.path.isfile("A" + str(numAnimal) + "_Data" + str(indexData) + ".csv"):
+            file_to_open.append(os.getcwd() + "\\A" + str(numAnimal) + "_Data" + str(indexData) + ".csv")
+     #       print(indexData)
+            indexData += 1
+
+
+        os.chdir(lastDirectoy)
+    #  print ("indexdata %d",indexData)
     # Récupération des données
-    for i in range(len(file_to_open)):
 
-        data = []
-        file = open(file_to_open[i], "r")
-        cr = csv.reader(file, delimiter=',')
+        for i in range(indexData-1):
 
-        for row in cr:
-            data.append(float((int(row[0]) - offset) * gain))
+            data = []
+            file = open(file_to_open[i], "r")
+            cr = csv.reader(file, delimiter=',')
+
+            for row in cr:
+                data.append(float((int(row[0]) - offset) * gain))
             ecg = ECG("Animal_" + str(numAnimal) + "_ECG_" + str(i), data, sample_rate)
+            rescueindex = i
+            if (rescueindex == 0) :
+                rescueindex +=1
+            ecg.find_rescue(numAnimal , rescueindex)
+            ecg.find_shock()
+            ecg.delete_before_shock(nbEchAvShock)
+            ecg.get_EMA(10)
+            listECG.append(ecg)
 
-        listECG.append(ecg)
 
-    # Retour au chemin de travail original
+        # Retour au chemin de travail original
     os.chdir(lastDirectoy)
 
     return listECG
 
 
-def afficher_un_ECG(listeECG : list, nbEchAvShock:int):
+def afficher_un_ECG(listeECG : list):
 
     numEcg = select_ecg()
-    listeECG[numEcg - 1].find_rescue(1,numEcg)
-    listeECG[numEcg-1].find_shock()
-    listeECG[numEcg - 1].delete_after_shock()
-    listeECG[numEcg - 1].delete_before_shock(nbEchAvShock)
-    #listeECG[numEcg - 1].apply_filter(0.5,15,3)
+    listeECG[numEcg - 1].apply_filter(0.5,15,3)
     listeECG[(numEcg-1)].plot_data_and_fft()
     #listeECG[(numEcg - 1)].plot_shock()
 
@@ -74,16 +103,59 @@ def afficher_all_ECG(listeECG : list):
 
 
 def create_train(listeEcg: list):
-    train = []
+    x_train = []
+    y_train = []
+    trainx = {}
     for i in range (round(len(listeEcg) / 3)):
-        train.append(listeEcg[i])
-    return train
+        trainx["SMA"] = listeEcg[i].SMA
+        trainx["EMA"] = listeEcg[i].EMA
+        trainx["FFT"] = listeEcg[i].get_frequency_value()
+
+        x_train.append(trainx)
+
+        y_train.append(listeEcg[i].rescue)
+    return x_train, y_train
 
 def create_test(listeEcg:list):
-    test = []
-    for i in range(round(len(listeEcg) / 3),round(len(listeEcg) *2 / 3)):
-        test.append(listeEcg[i])
-    return test
+    test = {}
+    x_test = np.array([])
+    y_test = np.array([])
+
+    for i in range(round(len(listeEcg) / 3), round(len(listeEcg) *2 / 3),1):
+        x_test_t = np.array([])
+        y_test_t = np.array([])
+        x_test_t = np.append(x_test_t,listeEcg[i-round(len(listeEcg) / 3)].SMA)
+        x_test_t = np.append(x_test_t, listeEcg[i - round(len(listeEcg) / 3)].EMA)
+        x_test_t = np.append(x_test_t, listeEcg[i - round(len(listeEcg) / 3)].get_frequency_value)
+        y_test_t= np.append(y_test_t,listeEcg[i-round(len(listeEcg) / 3)].rescue)
+        x_test_t = np.append(x_test, listeEcg[i - round(len(listeEcg) / 3)].get_frequency_value)
+        y_test_t= np.append(y_test,y_test_t)
+    return x_test,y_test
+
+
+
+
+def get_epoch(x,y,index):
+    epoch_x = []
+
+    epoch_x.append(x[index]['SMA'])
+    epoch_x.append(x[index]['EMA'])
+    epoch_x.append(x[index]['FFT'])
+    epoch_y = y[index]
+
+    return epoch_x,epoch_y
+
+
+def get_shape(listeEcg: list):
+    shape = listeEcg[0].get_size()
+    return shape
+
+def get_size_batch(listeEcg : list):
+    size = round(len(listeEcg) / 3)
+    return size
+
+
+
 ##################################################
 # A garder mais pas util pour étude de la base 2 #
 ##################################################
