@@ -3,7 +3,8 @@ import csv
 from ECG import ECG
 from CPR import CPR
 import numpy as np
-
+# Just disables the warning, doesn't enable AVX/FMA
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 ##################################################
 #      Utilitaires pour étude de la base 2       #
 ##################################################
@@ -33,7 +34,7 @@ def load_animal_datas(): #Recuperation des ECG d'un animal
     file_to_open = []
     indexData = 1
     lastDirectoy = os.getcwd()
-    for num in range(0,2):
+    for num in range(0,6):
         indexData =1
         numAnimal = 1
         if num == 0 :
@@ -72,6 +73,8 @@ def load_animal_datas(): #Recuperation des ECG d'un animal
 
             for row in cr:
                 data.append(float((int(row[0]) - offset) * gain))
+
+
             ecg = ECG("Animal_" + str(numAnimal) + "_ECG_" + str(i), data, sample_rate)
             rescueindex = i
             if (rescueindex == 0) :
@@ -79,7 +82,10 @@ def load_animal_datas(): #Recuperation des ECG d'un animal
             ecg.find_rescue(numAnimal , rescueindex)
             ecg.find_shock()
             ecg.delete_before_shock(nbEchAvShock)
+            ecg.apply_filter(5,10,3)
             ecg.get_EMA(10)
+
+
             listECG.append(ecg)
 
 
@@ -92,8 +98,8 @@ def load_animal_datas(): #Recuperation des ECG d'un animal
 def afficher_un_ECG(listeECG : list):
 
     numEcg = select_ecg()
-    listeECG[numEcg - 1].apply_filter(0.5,15,3)
-    listeECG[(numEcg-1)].plot_data_and_fft()
+   # listeECG[numEcg - 1].apply_filter(0.5,15,3)
+    listeECG[(numEcg-1)].plot()
     #listeECG[(numEcg - 1)].plot_shock()
 
 def afficher_all_ECG(listeECG : list):
@@ -110,38 +116,44 @@ def create_train(listeEcg: list):
         trainx["SMA"] = listeEcg[i].SMA
         trainx["EMA"] = listeEcg[i].EMA
         trainx["FFT"] = listeEcg[i].get_frequency_value()
-
         x_train.append(trainx)
 
         y_train.append(listeEcg[i].rescue)
     return x_train, y_train
 
 def create_test(listeEcg:list):
-    test = {}
-    x_test = np.array([])
-    y_test = np.array([])
+    testx = {}
+    x_test =[]
+    y_test = []
 
     for i in range(round(len(listeEcg) / 3), round(len(listeEcg) *2 / 3),1):
-        x_test_t = np.array([])
-        y_test_t = np.array([])
-        x_test_t = np.append(x_test_t,listeEcg[i-round(len(listeEcg) / 3)].SMA)
-        x_test_t = np.append(x_test_t, listeEcg[i - round(len(listeEcg) / 3)].EMA)
-        x_test_t = np.append(x_test_t, listeEcg[i - round(len(listeEcg) / 3)].get_frequency_value)
-        y_test_t= np.append(y_test_t,listeEcg[i-round(len(listeEcg) / 3)].rescue)
-        x_test_t = np.append(x_test, listeEcg[i - round(len(listeEcg) / 3)].get_frequency_value)
-        y_test_t= np.append(y_test,y_test_t)
+        testx["SMA"] = listeEcg[i].SMA
+        testx["EMA"] = listeEcg[i].EMA
+        testx["FFT"] = listeEcg[i].get_frequency_value()
+        x_test.append(testx)
+        y_test.append(listeEcg[i].rescue)
     return x_test,y_test
 
 
 
 
-def get_epoch(x,y,index):
-    epoch_x = []
+def get_epoch(x,output):
+    epoch_x = [[0 for i in range(121)] for j in range(len(x[:]))] ###" attention hardcode faut le bouger un jour
+    epoch_y =[[0 for i in range(1)] for j in range(len(x[:]))]
 
-    epoch_x.append(x[index]['SMA'])
-    epoch_x.append(x[index]['EMA'])
-    epoch_x.append(x[index]['FFT'])
-    epoch_y = y[index]
+    for y in range (len(x)-1):
+        sma = x[y]['SMA']
+        ema = x[y]['EMA']
+        fft = x[y]['FFT']
+
+        for i in range (len (sma)*2-1):
+            if i < len(sma)-1:
+                epoch_x[y][i] = sma[i]
+            else :
+                epoch_x[y][i] = ema[i-len(sma)]
+
+        epoch_x[y][i+1] = fft
+        epoch_y[y][0] = output[y]
 
     return epoch_x,epoch_y
 

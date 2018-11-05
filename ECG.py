@@ -21,8 +21,8 @@ class ECG:
 
     def find_shock(self):
         for i in range (len(self.data)):
-            if self.data[i] > abs(0.5*max(self.data)):
-                self.shock = i
+            if (abs(self.data[i]) > abs(0.5*max(self.data))):
+                self.shock = i-1
                 return
 
     def find_rescue(self,numAnimal : int,num_ecg : int):
@@ -48,8 +48,8 @@ class ECG:
 
     def delete_before_shock(self, nbEchToSaveBeforeShock: int):
         data = []
-        for i in range(len(self.data)):
-            if i >= len(self.data) - nbEchToSaveBeforeShock:
+        for i in range(self.shock):
+            if i >= self.shock - nbEchToSaveBeforeShock:
                 data.append(self.data[i])
             # else:
             #   data.append(0)
@@ -65,7 +65,6 @@ class ECG:
         plt.grid()
         plt.plot(x, self.data,color='r')
         plt.bar(x[self.shock], 1.25 * max(self.data), width=0.1, color='b')
-        print(self.shock)
         plt.show()
 
     def add_data(self, data_ecg):
