@@ -7,13 +7,13 @@ import os
 import csv
 class ECG:
 
-    def __init__(self, name : str, data, sample ):
+    def __init__(self, name: str, data, sample):
         self.name = name
         self.data = data
         self.sample = sample
         self.rescue = 1
         self.shock = 0
-        self.SMA = [0]
+        self.SMA = []
         self.EMA = [0]
 
     def set_rescue(self,rescue):
@@ -31,10 +31,12 @@ class ECG:
         os.chdir(os.getcwd())
         file_name = "Rescue"+(str(numAnimal)+".txt")
         file = open(file_name,"r")
-        read = file.read();
+        read = file.read()
         self.rescue = read[(num_ecg-1)*2]
         if self.rescue == 'R':
             self.rescue = 0
+        if self.rescue == '1':
+            self.rescue = 1
 
         return True
 
@@ -164,7 +166,7 @@ class ECG:
             self.data[i] = self.data[i] - average
 
     def get_sma(self, period : int ):
-        for i in range(0,len(self.data)-period,period):
+        for i in range(0,len(self.data),period):
             sum = 0
             for y in range (i,i+period,1):
                 sum = sum + abs(self.data[y])
